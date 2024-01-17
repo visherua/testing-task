@@ -1,0 +1,18 @@
+{
+  "name": "best-solution",
+  "version": "1.0.0",
+  "description": "hope it best ;)",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "*",
+    "nodemon": "^3.0.3",
+    "xlsx": "^0.18.5"
+  }
+}

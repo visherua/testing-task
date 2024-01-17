@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Upload Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        #upload-container {
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="upload-container">
+        <h2>Upload Invoice XLSX File</h2>
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="invoiceFile">Choose file:</label>
+            <input type="file" id="invoiceFile" name="invoiceFile" accept=".xlsx">
+            <label for="invoicingMonth">Invoicing Month (YYYY-MM):</label>
+            <input type="text" id="invoicingMonth" name="invoicingMonth" pattern="\d{4}-\d{2}" placeholder="YYYY-MM"
+                required>
+            <button type="button" onclick="uploadFile()">Upload</button>
+        </form>
+    </div>
+
+    <script>
+        function uploadFile() {
+            const fileInput = document.getElementById('invoiceFile');
+            const invoicingMonthInput = document.getElementById('invoicingMonth');
+            const file = fileInput.files[0];
+            const invoicingMonth = invoicingMonthInput.value;
+
+            if (!file) {
+                alert('Please choose a file to upload.');
+                return;
+            }
+
+            if (!invoicingMonth.match(/^\d{4}-\d{2}$/)) {
+                alert('Invalid Invoicing Month format. Please use YYYY-MM.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('invoiceFile', file);
+            formData.append('invoicingMonth', invoicingMonth);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the response data as needed
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('An error occurred during file upload.');
+                });
+        }
+    </script>
+</body>
+
+</html>
