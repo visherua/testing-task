@@ -39,6 +39,24 @@
             cursor: pointer;
         }
 
+        input[type="text"] {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #dateError,
+        #fileError {
+            color: red;
+            margin-top: 5px;
+        }
+
+        #fileName {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
         button {
             background-color: #2ecc71;
             color: #fff;
@@ -56,16 +74,59 @@
 </head>
 
 <body>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
         <label for="file">Choose a file</label>
         <input type="file" name="file" id="file" accept=".xlsx" required>
+
+        <!-- New input field for manual invoicingMonth input -->
+        <input type="text" name="invoicingMonth" id="invoicingMonthInput" placeholder="Enter invoicingMonth (YYYY-MM)"
+            required>
+        <div id="dateError"></div>
+
+        <!-- Field to display the name of the uploaded file -->
+        <div id="fileName"></div>
+
+        <!-- Error message for invalid file format -->
+        <div id="fileError"></div>
+
         <button type="submit" id="uploadBtn" disabled>Upload</button>
     </form>
 
     <script>
         document.getElementById('file').addEventListener('change', function () {
             const uploadBtn = document.getElementById('uploadBtn');
-            uploadBtn.disabled = this.files.length === 0;
+            const fileNameDisplay = document.getElementById('fileName');
+            const fileError = document.getElementById('fileError');
+
+            if (this.files.length > 0) {
+                const fileName = this.files[0].name;
+
+                if (fileName.toLowerCase().endsWith('.xlsx')) {
+                    fileError.textContent = ''; // Reset file error message
+                    fileNameDisplay.textContent = `Uploaded File: ${fileName}`;
+                } else {
+                    fileError.textContent = 'Invalid file format. Please select a .xlsx file.';
+                    fileNameDisplay.textContent = '';
+                }
+            } else {
+                fileError.textContent = '';
+                fileNameDisplay.textContent = '';
+            }
+
+            uploadBtn.disabled = this.files.length === 0 || fileError.textContent !== '';
+        });
+
+        document.getElementById('invoicingMonthInput').addEventListener('input', function () {
+            const dateError = document.getElementById('dateError');
+            const dateRegex = /^\d{4}-(0[1-9]|1[0-2])$/; // YYYY-MM format
+
+            if (!dateRegex.test(this.value)) {
+                dateError.textContent = 'Invalid date format. Please use YYYY-MM.';
+                document.getElementById('uploadBtn').disabled = true;
+            } else {
+                dateError.textContent = '';
+                document.getElementById('uploadBtn').disabled = false;
+            }
         });
     </script>
 </body>
