@@ -5,7 +5,7 @@ const XLSX = require('xlsx');
 const moment = require('moment');
 const app = express();
 const port = 3000;
-
+const { isValidDatePresented, validateMandatoryFields, validateDate } = require('./helpers/validation');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -33,11 +33,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
         const dateFromDocument = worksheetsData.Sheet1[0][0];
         const formattedDateFromDoucument = moment(dateFromDocument, 'MMM YYYY').format('YYYY-MM');
 
-        const isValidDate = moment(dateFromDocument, 'MMM YYYY').isValid()
-        if (!isValidDate) {
-            return res.status(400).json({ error: 'Invalid structure of file. Date is invalid' });
-
-        };
+        isValidDatePresented(dateFromDocument, res);
 
         const importRangeForMandatoryKeys = 'A5:M5';
         const mandatoryFields = {};
@@ -47,16 +43,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
                 header: 1,
             });
         };
-        function validateMandatoryFields(data, mandatoryFields) {
-            const missingFields = mandatoryFields.filter(field => !data.includes(field));
 
-            if (missingFields.length > 0) {
-                const errorMessage = `Missing mandatory fields: ${missingFields.join(', ')}`;
-                return { valid: false, error: errorMessage };
-            }
-
-            return { valid: true };
-        }
         const arrayOfMandatoryFields = mandatoryFields.Sheet1[0];
         const mandatoryKeys = [
             'Customer',
@@ -69,17 +56,8 @@ app.post('/upload', upload.single('file'), (req, res) => {
             'Invoice Currency',
             'Status'
         ];
-        const validationResult = validateMandatoryFields(arrayOfMandatoryFields, mandatoryKeys);
-
-        if (!validationResult.valid) {
-            return res.status(400).json({ error: validationResult.error });
-        }
-
-
-        if (invoicingMonth !== formattedDateFromDoucument) {
-            // Send an error response if not the same
-            return res.status(400).json({ error: 'InvoicingMonth does not match the document date.' });
-        }
+        validateMandatoryFields(arrayOfMandatoryFields, mandatoryKeys, res);
+        validateDate(invoicingMonth, formattedDateFromDoucument, res);
         const importRange = 'A2:F4'; //range for getting currency from file
         const headers = 1; //range for getting currency from file
         let worksheetsForCurrency = {};
@@ -96,7 +74,11 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
         let worksheetsForInvoice = {};
         for (const sheetName of workbook.SheetNames) {
+            const stopRow = 10;
             worksheetsForInvoice[sheetName] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { range: 4 });
+            if (worksheetsForInvoice[sheetName].length >= stopRow) {
+                break;
+            }
         }
         const dataForInvoces = worksheetsForInvoice.Sheet1;
 
@@ -104,10 +86,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
         function validateInvoces(invoices) {
             const validInvoices = []
             invoices.forEach((invoice) => {
-                console.log('invoice', invoice)
                 if (invoice['Status'] === 'Ready' || invoice['Invoice #']) {
-
-
                     // When no validation errors - keep validationErrors empty - so i add array by default
                     invoice.validationErrors = [];
                     // Check if all mandatory keys are present in the object
